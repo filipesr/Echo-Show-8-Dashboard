@@ -4,6 +4,8 @@ A universal app that replaces the home screen on jailbroken Amazon Echo Show 8 d
 
 Built as an Android launcher, it starts automatically when the device boots, locks to landscape fullscreen, reads your photos from a folder on the device, and shows a clean dashboard with live weather and your agenda. No server, no Home Assistant, no subscriptions.
 
+![Echo Dashboard running on an Echo Show 8 (2nd gen) with LineageOS](docs/photo-echo-show.jpeg)
+
 > 💬 Shared on XDA: **[Echo Show 8 2nd gen — standalone smart dashboard, no Home Assistant required](https://xdaforums.com/t/sharing-echo-show-8-2nd-gen-standalone-smart-dashboard-no-home-assistant-required.4808106/)** — questions, feedback and photos of your setup are welcome there.
 
 ### Motivation
