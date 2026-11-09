@@ -1,46 +1,25 @@
-"use client";
-
-import { Bell, Calendar, CheckCircle2, Circle, ListChecks } from "lucide-react";
+import { Bell, Calendar, CheckCircle2, Circle, ListChecks } from "lucide-react-native";
 import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { formatDuration, getNextEvent } from "@/lib/agenda";
+import { colors, fonts } from "@/lib/theme";
 import { toLocalISO } from "@/lib/weather";
 import type { AgendaData, AgendaEvent, EventColor } from "@/types/agenda";
 
 interface AgendaProps {
   agenda: AgendaData | null;
+  configured: boolean; // an agenda URL is set
   now: Date;
-  className?: string;
 }
 
-// Full class names (not built dynamically) so Tailwind can find them
-const COLORS: Record<EventColor, { border: string; text: string; badge: string; dot: string }> = {
-  cyan: {
-    border: "border-l-cyan-400",
-    text: "text-cyan-300",
-    badge: "bg-cyan-500/15 border-cyan-400/30",
-    dot: "bg-cyan-400",
-  },
-  amber: {
-    border: "border-l-amber-400",
-    text: "text-amber-300",
-    badge: "bg-amber-500/15 border-amber-400/30",
-    dot: "bg-amber-400",
-  },
-  emerald: {
-    border: "border-l-emerald-400",
-    text: "text-emerald-300",
-    badge: "bg-emerald-500/15 border-emerald-400/30",
-    dot: "bg-emerald-400",
-  },
-  indigo: {
-    border: "border-l-indigo-400",
-    text: "text-indigo-300",
-    badge: "bg-indigo-500/15 border-indigo-400/30",
-    dot: "bg-indigo-400",
-  },
+const EVENT_COLORS: Record<EventColor, string> = {
+  cyan: colors.cyan,
+  amber: colors.amber,
+  emerald: colors.emerald,
+  indigo: colors.indigo,
 };
 
-const colorOf = (event: AgendaEvent) => COLORS[event.color ?? "cyan"] ?? COLORS.cyan;
+const colorOf = (event: AgendaEvent) => EVENT_COLORS[event.color ?? "cyan"] ?? colors.cyan;
 
 const monthFormat = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" });
 const weekdayFormat = new Intl.DateTimeFormat("pt-BR", { weekday: "short" });
@@ -62,7 +41,7 @@ function weekDays(date: Date) {
   });
 }
 
-export default function Agenda({ agenda, now, className = "" }: AgendaProps) {
+export default function Agenda({ agenda, configured, now }: AgendaProps) {
   // Null means "today", so the selection follows the date across midnight
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -71,138 +50,225 @@ export default function Agenda({ agenda, now, className = "" }: AgendaProps) {
 
   const events = agenda?.events ?? [];
   const reminders = agenda?.reminders ?? [];
-  const byTime = (a: AgendaEvent, b: AgendaEvent) => a.time.localeCompare(b.time);
-  const dayEvents = events.filter((e) => e.date === day).sort(byTime);
+  const dayEvents = events.filter((e) => e.date === day).sort((a, b) => a.time.localeCompare(b.time));
   const todayCount = events.filter((e) => e.date === today).length;
   const next = getNextEvent(events, now);
-
   const doneCount = reminders.filter((r) => r.done).length;
 
   return (
-    <section className={`panel flex flex-col rounded-2xl p-4 ${className}`}>
-      <header className="flex items-center justify-between border-b border-white/5 pb-3">
-        <h2 className="flex items-center gap-2 text-sm font-bold tracking-wider text-slate-100 uppercase">
-          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-cyan-400" />
-          Agenda da semana
-        </h2>
-        <span className="flex items-center gap-1.5 rounded-md border border-cyan-800/40 bg-cyan-950/60 px-2.5 py-0.5 font-display text-xs text-cyan-300">
-          <Calendar className="h-3.5 w-3.5" aria-hidden />
-          {formatMonth(now)}
-        </span>
-      </header>
+    <View style={styles.panel}>
+      <View style={styles.header}>
+        <View style={styles.title}>
+          <View style={styles.dot} />
+          <Text style={styles.titleText}>AGENDA DA SEMANA</Text>
+        </View>
+        <View style={styles.month}>
+          <Calendar size={11} color={colors.cyanSoft} />
+          <Text style={styles.monthText}>{formatMonth(now)}</Text>
+        </View>
+      </View>
 
-      <div className="grid grid-cols-7 gap-1.5 py-3">
+      <View style={styles.week}>
         {weekDays(now).map((date) => {
           const iso = toLocalISO(date).slice(0, 10);
           const active = iso === day;
           const first = events.find((e) => e.date === iso);
           return (
-            <button
+            <Pressable
               key={iso}
-              type="button"
-              onClick={() => setSelected(iso === today ? null : iso)}
-              className={`flex flex-col items-center rounded-xl py-2 ${
-                active ? "glow-cyan border border-cyan-400 bg-cyan-500/20" : "tile"
-              }`}
+              onPress={() => setSelected(iso === today ? null : iso)}
+              style={[styles.weekDay, active && styles.weekDayActive]}
             >
-              <span
-                className={`text-[11px] uppercase ${active ? "font-bold text-cyan-300" : "text-slate-400"}`}
-              >
-                {weekdayFormat.format(date).replace(".", "")}
-              </span>
-              <span className="font-display text-base font-bold">{date.getDate()}</span>
-              <span className={`mt-1 h-1.5 w-1.5 rounded-full ${first ? colorOf(first).dot : ""}`} />
-            </button>
+              <Text style={[styles.weekDayName, active && styles.weekDayNameActive]}>
+                {weekdayFormat.format(date).replace(".", "").toUpperCase()}
+              </Text>
+              <Text style={styles.weekDayNumber}>{date.getDate()}</Text>
+              <View style={[styles.eventDot, first && { backgroundColor: colorOf(first) }]} />
+            </Pressable>
           );
         })}
-      </div>
+      </View>
 
-      <div className="flex-1 space-y-2 overflow-y-auto">
-        {!agenda && (
-          <p className="pt-8 text-center text-sm text-slate-500">
-            Configure NEXT_PUBLIC_AGENDA_URL para ver sua agenda.
-          </p>
+      <ScrollView style={styles.events} contentContainerStyle={styles.eventsContent}>
+        {!configured && (
+          <Text style={styles.empty}>Configure a URL da agenda nas configurações.</Text>
         )}
-        {agenda && dayEvents.length === 0 && (
-          <p className="pt-8 text-center text-sm text-slate-500">Nenhum compromisso.</p>
-        )}
+        {configured && dayEvents.length === 0 && <Text style={styles.empty}>Nenhum compromisso.</Text>}
         {dayEvents.map((event) => {
           const color = colorOf(event);
           const tag = event === next?.event ? `Em ${formatDuration(next.minutes)}` : event.tag;
           return (
-            <div
-              key={`${event.date}-${event.time}-${event.title}`}
-              className={`flex items-center justify-between gap-3 rounded-xl border border-l-4 border-white/5 bg-white/[0.04] px-3 py-2.5 ${color.border}`}
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <span
-                  className={`rounded bg-black/30 px-2 py-0.5 font-display text-sm font-bold tabular-nums ${color.text}`}
-                >
-                  {event.time}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-[15px] font-semibold text-white">{event.title}</p>
-                  {event.subtitle && (
-                    <p className="truncate text-xs text-slate-400">{event.subtitle}</p>
-                  )}
-                </div>
-              </div>
-              {tag && (
-                <span
-                  className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${color.text} ${color.badge}`}
-                >
-                  {tag}
-                </span>
-              )}
-            </div>
+            <View key={`${event.date}-${event.time}-${event.title}`} style={[styles.event, { borderLeftColor: color }]}>
+              <Text style={[styles.eventTime, { color }]}>{event.time}</Text>
+              <View style={styles.eventBody}>
+                <Text style={styles.eventTitle} numberOfLines={1}>{event.title}</Text>
+                {event.subtitle && <Text style={styles.eventSubtitle} numberOfLines={1}>{event.subtitle}</Text>}
+              </View>
+              {tag && <Text style={[styles.tag, { color, borderColor: color }]}>{tag}</Text>}
+            </View>
           );
         })}
-      </div>
+      </ScrollView>
 
       {reminders.length > 0 && (
-        <div className="mt-3 border-t border-white/5 pt-3">
-          <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="flex items-center gap-1.5 font-bold text-slate-400 uppercase">
-              <ListChecks className="h-3.5 w-3.5 text-cyan-400" aria-hidden />
-              Lembretes
-            </span>
-            <span className="font-display text-slate-500">
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.title}>
+              <ListChecks size={11} color={colors.cyan} />
+              <Text style={styles.sectionTitle}>LEMBRETES</Text>
+            </View>
+            <Text style={styles.sectionAside}>
               {doneCount} de {reminders.length} concluídos
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-[13px]">
+            </Text>
+          </View>
+          <View style={styles.reminders}>
             {reminders.slice(0, 4).map((reminder) => (
-              <div key={reminder.text} className="tile flex items-center gap-2 rounded-lg p-1.5">
+              <View key={reminder.text} style={styles.reminder}>
                 {reminder.done ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" aria-label="Concluído" />
+                  <CheckCircle2 size={13} color={colors.emerald} accessibilityLabel="Concluído" />
                 ) : (
-                  <Circle className="h-4 w-4 shrink-0 text-amber-400" aria-label="Pendente" />
+                  <Circle size={13} color={colors.amber} accessibilityLabel="Pendente" />
                 )}
-                <span
-                  className={`truncate ${reminder.done ? "text-slate-400 line-through" : "font-medium text-slate-200"}`}
-                >
+                <Text style={[styles.reminderText, reminder.done && styles.reminderDone]} numberOfLines={1}>
                   {reminder.text}
-                </span>
-              </div>
+                </Text>
+              </View>
             ))}
-          </div>
-        </div>
+          </View>
+        </View>
       )}
 
-      {agenda && (
-        <footer className="mt-3 flex items-center justify-between border-t border-white/5 pt-3 text-[13px] text-slate-300">
-          <span className="flex items-center gap-1.5">
-            <CheckCircle2 className="h-4 w-4 text-cyan-400" aria-hidden />
-            {todayCount} compromisso{todayCount === 1 ? "" : "s"} hoje
-          </span>
+      {configured && (
+        <View style={[styles.section, styles.footer]}>
+          <View style={styles.title}>
+            <CheckCircle2 size={13} color={colors.cyan} />
+            <Text style={styles.footerText}>
+              {todayCount} compromisso{todayCount === 1 ? "" : "s"} hoje
+            </Text>
+          </View>
           {next && (
-            <span className="flex items-center gap-1 rounded bg-cyan-950/40 px-2 py-0.5 font-display text-xs text-cyan-400">
-              <Bell className="h-3.5 w-3.5" aria-hidden />
-              Próximo em {formatDuration(next.minutes)}
-            </span>
+            <View style={styles.next}>
+              <Bell size={11} color={colors.cyan} />
+              <Text style={styles.nextText}>Próximo em {formatDuration(next.minutes)}</Text>
+            </View>
           )}
-        </footer>
+        </View>
       )}
-    </section>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  panel: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.panelBorder,
+    backgroundColor: colors.panel,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  title: { flexDirection: "row", alignItems: "center", gap: 6 },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.cyan },
+  titleText: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: 11, letterSpacing: 1 },
+  month: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: "rgba(8, 51, 68, 0.6)",
+    borderWidth: 1,
+    borderColor: "rgba(21, 94, 117, 0.4)",
+  },
+  monthText: { color: colors.cyanSoft, fontFamily: fonts.display, fontSize: 10 },
+  week: { flexDirection: "row", gap: 5, paddingVertical: 8 },
+  weekDay: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: colors.tile,
+    borderWidth: 1,
+    borderColor: colors.tileBorder,
+  },
+  weekDayActive: { backgroundColor: "rgba(6, 182, 212, 0.2)", borderColor: colors.cyan },
+  weekDayName: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 8 },
+  weekDayNameActive: { color: colors.cyanSoft, fontFamily: fonts.bodyBold },
+  weekDayNumber: { color: colors.text, fontFamily: fonts.displayBold, fontSize: 12 },
+  eventDot: { width: 4, height: 4, borderRadius: 2, marginTop: 3 },
+  events: { flex: 1 },
+  eventsContent: { gap: 6 },
+  empty: { color: colors.textFaint, fontFamily: fonts.body, fontSize: 11, textAlign: "center", paddingTop: 24 },
+  event: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderLeftWidth: 3,
+    borderColor: colors.tileBorder,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+  },
+  eventTime: {
+    fontFamily: fonts.displayBold,
+    fontSize: 11,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: "hidden",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+  },
+  eventBody: { flex: 1 },
+  eventTitle: { color: colors.text, fontFamily: fonts.bodySemiBold, fontSize: 12 },
+  eventSubtitle: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 9 },
+  tag: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: 9,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  section: { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.divider },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  sectionTitle: { color: colors.textMuted, fontFamily: fonts.bodyBold, fontSize: 9 },
+  sectionAside: { color: colors.textFaint, fontFamily: fonts.display, fontSize: 9 },
+  reminders: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  reminder: {
+    width: "48.5%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: 5,
+    borderRadius: 8,
+    backgroundColor: colors.tile,
+    borderWidth: 1,
+    borderColor: colors.tileBorder,
+  },
+  reminderText: { flex: 1, color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 10 },
+  reminderDone: { color: colors.textMuted, textDecorationLine: "line-through" },
+  footer: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  footerText: { color: colors.textSecondary, fontFamily: fonts.body, fontSize: 10 },
+  next: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: "rgba(8, 51, 68, 0.4)",
+  },
+  nextText: { color: colors.cyan, fontFamily: fonts.display, fontSize: 9 },
+});

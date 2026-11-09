@@ -1,15 +1,11 @@
 import { toLocalISO } from "@/lib/weather";
 import type { AgendaData, AgendaEvent } from "@/types/agenda";
 
-export const AGENDA_URL = process.env.NEXT_PUBLIC_AGENDA_URL;
-
 // Expects { events: AgendaEvent[], reminders: Reminder[] } (see docs/agenda.example.json).
 // Missing lists are treated as empty so a partial file still renders.
-export async function fetchAgenda(): Promise<AgendaData> {
-  if (!AGENDA_URL) throw new Error("NEXT_PUBLIC_AGENDA_URL not set");
-
+export async function fetchAgenda(url: string): Promise<AgendaData> {
   // no-store: the file is edited by hand and should show up on the next poll
-  const res = await fetch(AGENDA_URL, { cache: "no-store" });
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error(`Agenda error: ${res.status}`);
   const data = await res.json();
 

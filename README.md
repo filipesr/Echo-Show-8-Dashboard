@@ -1,106 +1,153 @@
 ## Echo Dashboard
 
-A progressive web app designed as a standalone dashboard for jailbroken Amazon Echo Show 8 devices running LineageOS + Fully Kiosk Browser — or any landscape tablet.
+A universal app that replaces the home screen on jailbroken Amazon Echo Show 8 devices running LineageOS — or runs as a web dashboard on any browser.
+
+Built as an Android launcher, it starts automatically when the device boots, locks to landscape fullscreen, reads your photos from a folder on the device, and shows a clean dashboard with live weather and your agenda. No server, no Home Assistant, no subscriptions.
 
 ### Features
 
-- **24h clock** with live seconds, weekday and full date
-- **Current weather** with temperature, feels-like, today's min/max, wind, rain chance and humidity, powered by [Open-Meteo](https://open-meteo.com/) (free, no API key required)
+- **Android launcher** — replaces the home screen, boots straight into the dashboard
+- **24h clock** with live seconds, weekday, full date in Portuguese and ISO week number
+- **Current weather** via [Open-Meteo](https://open-meteo.com/) (free, no API key): temperature, feels-like, today's min/max, wind, rain chance and humidity
 - **Hourly forecast** — next 8 hours with rain chance
 - **Daily forecast** — today + next 4 days with min/max temperature bars
-- **Weekly agenda** with events, reminders and a "next event in X min" countdown, from a JSON file you host anywhere
-- **Photo slideshow** screensaver after 5 minutes of inactivity (or on demand), with a subtle clock overlay
-- **Offline support** via service worker — keeps working with cached weather data when the network drops
-- **Two display modes:**
-  - **Web:** interactive mockup of an Echo Show 8 with the live dashboard running inside the screen area
-  - **Installed PWA:** fullscreen, landscape-locked, no browser chrome — feels native on the device
+- **Weekly agenda** — events and reminders from a JSON file you host anywhere (e.g. a GitHub Gist), with a "next event in X min" countdown
+- **Photo slideshow** screensaver after 5 minutes idle (or on demand): 3s crossfade, 10s per photo, small clock overlay; any touch goes back
+- **Settings screen** (5 taps on the top-left corner): city search, agenda URL, photo folder, brightness, volume, Wi-Fi status and Android shortcuts
+- **Offline support** — the last weather and agenda responses are cached on the device
+- **Universal** — the same codebase builds the Android APK (launcher) and a static web app (Vercel)
+- **Web preview** — on desktop browsers, the dashboard runs inside an Echo Show 8 mockup
 
-### Why
+### Targets
 
-Amazon's Echo Show devices are capable hardware held back by ads, telemetry and a locked-down OS. Once jailbroken with [saiyaku-athena](https://xdaforums.com/t/unlock-root-twrp-unbrick-amazon-echo-show-8-2nd-gen-2021-athena.4804958/) and flashed with [LineageOS 18.1](https://github.com/amazon-oss/releases/releases/tag/lineage-18.1-athena-v0.1), they become Android tablets with good speakers and a decent screen — but no purpose-built dashboard. This project fills that gap with a zero-dependency, self-hosted dashboard that runs entirely in the browser.
+| Target | How it runs | Photos source | Deploy |
+|---|---|---|---|
+| **Android APK** | Home screen launcher, landscape, immersive fullscreen, keep-awake | Folder chosen in the settings (Android MediaStore) | `adb install` |
+| **Web (Vercel)** | Static site with the Echo Show mockup | `public/photos/` or `EXPO_PUBLIC_PHOTOS_URL` | `npm run build:web` |
+| **Web on a device** | Fullscreen, no mockup: open with `?kiosk` or install as PWA | Same as web | Any kiosk browser (e.g. Fully Kiosk) |
 
 ### Tech stack
 
-- Next.js 14+ (App Router)
+- [Expo](https://expo.dev/) SDK 58 (React Native 0.88, New Architecture) with Expo Router
 - TypeScript
-- TailwindCSS
-- Open-Meteo API (client-side, no backend needed)
-- Deployed on Vercel
+- React Native `StyleSheet` with design tokens (`src/lib/theme.ts`), react-native-web
+- Open-Meteo forecast and geocoding APIs (client-side, no backend)
+- `expo-media-library` (MediaStore), `expo-image` (photo decoding sized to the screen), `expo-brightness`, `react-native-volume-manager`, `@react-native-community/netinfo`
+- `lucide-react-native` icons, Space Grotesk + Plus Jakarta Sans fonts
 
 ### Quick start
 
 ```bash
-git clone https://github.com/YOUR_USER/echo-dashboard.git
-cd echo-dashboard
+git clone https://github.com/filipesr/Echo-Show-8-Dashboard-PWA.git
+cd Echo-Show-8-Dashboard-PWA
 npm install
-cp .env.example .env.local  # set your coordinates
-npm run dev
+cp .env.example .env   # optional: default city, agenda URL
+
+# Development
+npx expo start          # press w for web, a for Android (development build)
+
+# Android release APK (local build: JDK 17 + Android SDK), installed via adb
+npx expo prebuild --platform android
+npm run android:release -- --device <adb-serial>
+
+# Android APK in the cloud (EAS)
+npx eas-cli@latest build --platform android --profile preview
+
+# Static web build (output: dist/)
+npm run build:web
 ```
+
+`android/` is generated by `expo prebuild` and not committed: native behavior is configured in `app.json`.
 
 ### Environment variables
 
+Build-time **defaults**. On the device everything can be changed in the settings screen, without rebuilding.
+
 | Variable | Default | Description |
 |---|---|---|
-| `NEXT_PUBLIC_LAT` | `-25.41` | Latitude for weather data |
-| `NEXT_PUBLIC_LON` | `-54.63` | Longitude for weather data |
-| `NEXT_PUBLIC_CITY` | `Hernandarias` | City name shown next to the current weather |
-| `NEXT_PUBLIC_PHOTOS_URL` | — | Optional JSON endpoint returning an array of photo URLs for the slideshow |
-| `NEXT_PUBLIC_AGENDA_URL` | — | Optional JSON endpoint with agenda events and reminders (see below) |
+| `EXPO_PUBLIC_CITY` | `Hernandarias` | City name shown in the top bar |
+| `EXPO_PUBLIC_LAT` | `-25.41` | Latitude for weather data |
+| `EXPO_PUBLIC_LON` | `-54.63` | Longitude for weather data |
+| `EXPO_PUBLIC_AGENDA_URL` | — | JSON endpoint with agenda events and reminders (see [Agenda](#agenda)) |
+| `EXPO_PUBLIC_PHOTOS_URL` | `/photos/index.json` | Web only: JSON array of photo URLs for the slideshow |
 
-### How it works
+### Device setup
 
-- **Mode detection** (`src/hooks/useStandalone.ts`): installed PWA (`display-mode: fullscreen|standalone`, iOS `navigator.standalone`) or `?kiosk` in the URL renders the dashboard fullscreen; otherwise it is shown inside the Echo Show mockup (`src/components/DeviceFrame.tsx`).
-- **Fixed canvas** (`src/components/Dashboard.tsx`): the dashboard is laid out at 1280x800 (Echo Show 8 resolution) and scaled to fit its container, so it looks identical on the device and in the mockup.
-- **Data polling** (`src/hooks/useCachedData.ts`): weather (every 15 min) and agenda (every 5 min) are fetched client-side; the last response is kept in `localStorage` for instant reloads and offline use.
-- **Screensaver** (`src/hooks/useIdleTimer.ts`, `src/components/Slideshow.tsx`): after 5 minutes without interaction, or via the "Iniciar Photo-Slide" button, photos fade in (3s) every 10s; any touch returns to the dashboard.
-- **Service worker** (`public/sw.js`, production only): network-first for the page, cache-first for build assets, fonts and images (including slideshow photos).
+1. Jailbreak your Echo Show 8 2nd gen with [saiyaku-athena](https://xdaforums.com/t/unlock-root-twrp-unbrick-amazon-echo-show-8-2nd-gen-2021-athena.4804958/)
+2. Flash [LineageOS 18.1 for athena](https://github.com/amazon-oss/releases/releases/tag/lineage-18.1-athena-v0.1)
+3. Install the APK: `adb install -r app-release.apk`
+4. Press the home button (or `adb shell input keyevent KEYCODE_HOME`) — Android asks which launcher to use
+5. Select **Echo Dashboard** and choose "Always"
+6. Copy photos to a folder on the device (see below), then tap the **top-left corner 5 times** to open the settings and pick that folder, your city and the agenda URL
+
+To get back to the stock launcher: settings → "Trocar launcher padrão".
+
+#### Getting photos onto the device
+
+The Echo Show has no SD card slot and a small user partition (~3 GB). Options:
+
+- [Syncthing](https://syncthing.net/): sync a folder from your PC or phone; new photos show up automatically
+- `adb push <folder> /sdcard/Pictures/<Name>/`, then reboot or trigger a media scan
+
+Prefer photos resized to ~1920 px wide: full-size camera files waste storage and decoding time.
+
+#### Troubleshooting
+
+- **`INSTALL_FAILED_INSUFFICIENT_STORAGE`**: Android 11 keeps a free-space reserve, so installs fail well before the disk is full. Free space with `adb shell pm trim-caches 2G`; if not enough, remove updates of unused preinstalled apps (e.g. `adb shell pm uninstall com.google.android.googlequicksearchbox` on a system app removes only its updates)
+- **Brightness shows "Auto"**: the device is in automatic brightness mode; changing it in the settings switches to manual. The first change asks for the "modify system settings" permission
+
+### Agenda
+
+Point the agenda URL (settings screen or `EXPO_PUBLIC_AGENDA_URL`) to a JSON file in the format of [`docs/agenda.example.json`](docs/agenda.example.json):
+
+- `events`: `date` (`YYYY-MM-DD`), `time` (`HH:MM`), `title`, optional `subtitle`, `tag` (badge text) and `color` (`cyan`, `amber`, `emerald` or `indigo`)
+- `reminders`: `text` and optional `done`
+
+A [GitHub Gist](https://gist.github.com/) raw URL works well (it also allows CORS, required on web). The dashboard polls it every 5 minutes.
 
 ### Project structure
 
 ```
 src/
-  app/          layout (metadata, manifest, SW registration) and page
-  components/   Dashboard, DeviceFrame, StatusBar, Card, Clock, Weather*, *Forecast, Agenda, Slideshow, InstallButton, WeatherIcon
-  hooks/        useClock, useCachedData, useWeather, useAgenda, useStandalone, useIdleTimer
-  lib/          Open-Meteo client + weather code mapping, agenda fetch, local photos listing
-  types/        weather and agenda types
+  app/                        # Expo Router
+    _layout.tsx               # fonts, settings provider, keep awake, immersive mode
+    index.tsx                 # dashboard (mockup frame on web), idle timer, secret corner
+    slideshow.tsx             # photo screensaver
+    settings.tsx              # city, agenda, photo folder, brightness/volume, Android shortcuts
+    +html.tsx                 # web only: HTML shell of the static export
+  components/
+    Dashboard.tsx             # 960x600 dp canvas scaled to fit (1280x800 px on the device)
+    TopBar.tsx, Card.tsx, Clock.tsx, WeatherCurrent.tsx, HourlyForecast.tsx,
+    DailyForecast.tsx, Agenda.tsx, WeatherIcon.tsx
+    DeviceFrame.tsx           # web preview mockup
+    SecretCorner.tsx          # 5 taps → settings (the device has no navigation buttons)
+  hooks/
+    useSettings.tsx           # settings context, persisted with AsyncStorage
+    useCachedData.ts          # polling + offline cache (used by useWeather, useAgenda)
+    useClock.ts, useKioskMode.ts, useSystemStatus.ts (brightness, volume, Wi-Fi)
+  lib/
+    weather.ts                # Open-Meteo fetch, weather code mapping
+    agenda.ts, geocoding.ts, settings.ts, theme.ts
+    photos.ts / photos.web.ts # MediaStore folders (Android) / JSON list (web)
+  types/
+public/                       # web only: manifest, icons, photos/
+scripts/photos-index.js       # writes public/photos/index.json for the web slideshow
 docs/
-  agenda.example.json   agenda file format
-  screens/              visual design reference (mockup, DESIGN.md)
-public/
-  manifest.json, sw.js, icons
-  photos/       slideshow images
+  agenda.example.json         # agenda file format
+  screens/                    # visual design reference (Stitch mockup, DESIGN.md)
 ```
-
-### Slideshow photos
-
-Drop images (`.jpg`, `.png`, `.webp`, `.avif`, `.gif`) into `public/photos/` and redeploy — they are listed at build time. Alternatively, set `NEXT_PUBLIC_PHOTOS_URL` to a JSON endpoint returning an array of image URLs; it is fetched in the browser and takes precedence over the local photos.
-
-### Agenda
-
-Set `NEXT_PUBLIC_AGENDA_URL` to a JSON file in the format of [`docs/agenda.example.json`](docs/agenda.example.json):
-
-- `events`: `date` (`YYYY-MM-DD`), `time` (`HH:MM`), `title`, optional `subtitle`, `tag` (badge text) and `color` (`cyan`, `amber`, `emerald` or `indigo`)
-- `reminders`: `text` and optional `done`
-
-The file is fetched by the browser, so it must allow CORS — a [GitHub Gist](https://gist.github.com/) raw URL works. Edit the gist and the dashboard picks up changes within 5 minutes.
-
-### Device setup
-
-1. Jailbreak your Echo Show 8 (2nd gen) with saiyaku-athena
-2. Flash LineageOS 18.1 for athena
-3. Install Fully Kiosk Browser
-4. Point it to your Vercel deployment URL with `?kiosk` appended (e.g. `https://your-app.vercel.app/?kiosk`) — this forces the fullscreen dashboard without the device mockup, even when the PWA is not installed
-5. Enable kiosk mode, landscape lock, and fullscreen
 
 ### Design
 
 The visual design follows the mockup in [`docs/screens/`](docs/screens/) (generated with Stitch): dark navy canvas, glass-like cards, cyan/amber accents, Space Grotesk for numbers and Plus Jakarta Sans for text.
 
-### Roadmap
+### Why not Home Assistant?
 
-- **Home Assistant integration**: smart home toggles (lights, thermostat, TV) in a bottom dock, as in the mockup
-- Device telemetry from the mockup (volume, brightness, SoC temperature, Wi-Fi) is not readable from a web page; it could come from Home Assistant or the Fully Kiosk JavaScript API
+TECHO5 and similar projects turn the Echo Show into a great Home Assistant satellite — but they require a separate server running 24/7. This project takes a different approach: everything runs on the device itself (or as a static web page), with no infrastructure to maintain. Just weather from a free API, your agenda from a JSON file, photos from the device, and a clock.
+
+### Supported devices
+
+Primarily designed for the Echo Show 8 2nd gen (1280×800), but works on any Android device as a launcher and on any browser as a web page.
 
 ### License
 

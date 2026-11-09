@@ -1,12 +1,14 @@
-import { CalendarDays } from "lucide-react";
+import { LinearGradient } from "expo-linear-gradient";
+import { CalendarDays } from "lucide-react-native";
+import { StyleSheet, Text, View } from "react-native";
 import Card from "@/components/Card";
 import WeatherIcon from "@/components/WeatherIcon";
+import { colors, fonts } from "@/lib/theme";
 import { CONDITION_LABELS, getCondition } from "@/lib/weather";
 import type { DailyForecastItem } from "@/types/weather";
 
 interface DailyForecastProps {
   daily: DailyForecastItem[]; // starting today
-  className?: string;
 }
 
 const weekdayFormat = new Intl.DateTimeFormat("pt-BR", { weekday: "long" });
@@ -20,7 +22,7 @@ function formatWeekday(date: string, short = false) {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-export default function DailyForecast({ daily, className }: DailyForecastProps) {
+export default function DailyForecast({ daily }: DailyForecastProps) {
   const days = daily.slice(0, 5); // today + next 4 days
 
   // Bars share one scale, from the lowest min to the highest max of the
@@ -33,47 +35,71 @@ export default function DailyForecast({ daily, className }: DailyForecastProps) 
     <Card
       title="Próximos dias"
       icon={CalendarDays}
-      className={className}
-      aside={<span className="text-xs text-slate-400">Mín / Máx</span>}
+      style={styles.card}
+      aside={<Text style={styles.aside}>Mín / Máx</Text>}
     >
-      <div className="flex flex-1 flex-col justify-between gap-1.5">
+      <View style={styles.list}>
         {days.map((item, i) => (
-          <div
-            key={item.date}
-            className="tile flex flex-1 items-center gap-3 rounded-xl px-3 text-[15px]"
-          >
-            <span className="w-28 font-medium text-slate-200">
+          <View key={item.date} style={styles.row}>
+            <View style={styles.day}>
               {i === 0 ? (
-                <>
-                  <span className="font-bold text-cyan-400">Hoje</span>{" "}
-                  <span className="text-xs text-slate-500">{formatWeekday(item.date, true)}</span>
-                </>
+                <Text style={styles.today}>
+                  Hoje <Text style={styles.todayShort}>{formatWeekday(item.date, true)}</Text>
+                </Text>
               ) : (
-                formatWeekday(item.date)
+                <Text style={styles.dayText}>{formatWeekday(item.date)}</Text>
               )}
-            </span>
-            <span className="flex flex-1 items-center gap-2 text-sm text-slate-400">
-              <WeatherIcon code={item.weatherCode} className="h-5 w-5" />
-              {CONDITION_LABELS[getCondition(item.weatherCode)]}
-            </span>
-            <span className="w-8 text-right font-display text-sm text-slate-400 tabular-nums">
-              {Math.round(item.temperatureMin)}°
-            </span>
-            <div className="relative h-1.5 w-28 rounded-full bg-slate-800">
-              <div
-                className="absolute h-full rounded-full bg-gradient-to-r from-cyan-400 to-amber-400"
-                style={{
-                  left: `${((item.temperatureMin - low) / range) * 100}%`,
-                  width: `${((item.temperatureMax - item.temperatureMin) / range) * 100}%`,
-                }}
+            </View>
+            <View style={styles.condition}>
+              <WeatherIcon code={item.weatherCode} size={15} />
+              <Text style={styles.conditionText}>{CONDITION_LABELS[getCondition(item.weatherCode)]}</Text>
+            </View>
+            <Text style={styles.min}>{Math.round(item.temperatureMin)}°</Text>
+            <View style={styles.track}>
+              <LinearGradient
+                colors={[colors.cyan, colors.amber]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[
+                  styles.bar,
+                  {
+                    left: `${((item.temperatureMin - low) / range) * 100}%`,
+                    width: `${((item.temperatureMax - item.temperatureMin) / range) * 100}%`,
+                  },
+                ]}
               />
-            </div>
-            <span className="w-8 font-display text-sm font-semibold text-white tabular-nums">
-              {Math.round(item.temperatureMax)}°
-            </span>
-          </div>
+            </View>
+            <Text style={styles.max}>{Math.round(item.temperatureMax)}°</Text>
+          </View>
         ))}
-      </div>
+      </View>
     </Card>
   );
 }
+
+const styles = StyleSheet.create({
+  card: { flex: 1 },
+  aside: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 9 },
+  list: { flex: 1, gap: 5 },
+  row: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: colors.tile,
+    borderWidth: 1,
+    borderColor: colors.tileBorder,
+  },
+  day: { width: 84 },
+  dayText: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 11 },
+  today: { color: colors.cyan, fontFamily: fonts.bodyBold, fontSize: 11 },
+  todayShort: { color: colors.textFaint, fontFamily: fonts.body, fontSize: 9 },
+  condition: { flex: 1, flexDirection: "row", alignItems: "center", gap: 6 },
+  conditionText: { color: colors.textMuted, fontFamily: fonts.body, fontSize: 10 },
+  min: { width: 24, textAlign: "right", color: colors.textMuted, fontFamily: fonts.display, fontSize: 11 },
+  max: { width: 24, color: colors.text, fontFamily: fonts.displayBold, fontSize: 11 },
+  track: { width: 84, height: 5, borderRadius: 3, backgroundColor: "#1e293b" },
+  bar: { position: "absolute", top: 0, bottom: 0, borderRadius: 3 },
+});

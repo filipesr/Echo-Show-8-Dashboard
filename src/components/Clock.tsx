@@ -1,6 +1,6 @@
-"use client";
-
+import { StyleSheet, Text, View } from "react-native";
 import { useClock } from "@/hooks/useClock";
+import { colors, fonts } from "@/lib/theme";
 
 interface ClockProps {
   size?: "large" | "small";
@@ -25,24 +25,42 @@ export default function Clock({ size = "large" }: ClockProps) {
   const large = size === "large";
 
   return (
-    <div className={large ? "" : "text-right"}>
-      <div
-        className={`flex items-baseline font-display font-bold tracking-tight tabular-nums ${
-          large ? "" : "justify-end"
-        }`}
-      >
-        <span className={large ? "text-[76px] leading-none" : "text-5xl"}>
-          {now ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : "--:--"}
-        </span>
-        {large && (
-          <span className="ml-1.5 text-3xl text-cyan-400">
-            :{now ? pad(now.getSeconds()) : "--"}
-          </span>
-        )}
-      </div>
-      <p className={large ? "mt-3 text-[15px] font-medium text-slate-300" : "mt-1 text-lg"}>
-        {now ? formatDate(now) : " "}
-      </p>
-    </div>
+    <View style={!large && styles.alignRight}>
+      <View style={styles.row}>
+        <Text style={large ? styles.timeLarge : styles.timeSmall}>
+          {pad(now.getHours())}:{pad(now.getMinutes())}
+        </Text>
+        {large && <Text style={styles.seconds}>:{pad(now.getSeconds())}</Text>}
+      </View>
+      <Text style={large ? styles.dateLarge : styles.dateSmall}>{formatDate(now)}</Text>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  alignRight: { alignItems: "flex-end" },
+  row: { flexDirection: "row", alignItems: "baseline" },
+  timeLarge: {
+    color: colors.text,
+    fontFamily: fonts.displayBold,
+    fontSize: 58,
+    lineHeight: 62,
+    letterSpacing: -1.5,
+    fontVariant: ["tabular-nums"],
+  },
+  seconds: {
+    color: colors.cyan,
+    fontFamily: fonts.displayBold,
+    fontSize: 22,
+    marginLeft: 4,
+    fontVariant: ["tabular-nums"],
+  },
+  timeSmall: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontFamily: fonts.displayBold,
+    fontSize: 36,
+    fontVariant: ["tabular-nums"],
+  },
+  dateLarge: { color: colors.textSecondary, fontFamily: fonts.bodyMedium, fontSize: 12, marginTop: 4 },
+  dateSmall: { color: "rgba(255, 255, 255, 0.7)", fontFamily: fonts.body, fontSize: 13 },
+});

@@ -1,5 +1,3 @@
-"use client";
-
 import { useSyncExternalStore } from "react";
 
 function subscribe(onTick: () => void) {
@@ -15,12 +13,11 @@ const SNAPSHOTS = {
   second: () => Math.floor(Date.now() / RESOLUTION_MS.second),
   minute: () => Math.floor(Date.now() / RESOLUTION_MS.minute),
 };
-const getServerSnapshot = () => null;
 
 // Returns the current date, updated every second (or every minute, for
-// components that don't show seconds and shouldn't re-render as often).
-// Null on the server so server and client render the same markup.
-export function useClock(resolution: "second" | "minute" = "second"): Date | null {
-  const tick = useSyncExternalStore(subscribe, SNAPSHOTS[resolution], getServerSnapshot);
-  return tick === null ? null : new Date(tick * RESOLUTION_MS[resolution]);
+// components that don't show seconds and shouldn't re-render as often)
+export function useClock(resolution: "second" | "minute" = "second"): Date {
+  const snapshot = SNAPSHOTS[resolution];
+  const tick = useSyncExternalStore(subscribe, snapshot, snapshot);
+  return new Date(tick * RESOLUTION_MS[resolution]);
 }

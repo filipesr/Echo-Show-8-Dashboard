@@ -1,30 +1,29 @@
-"use client";
-
-import { CalendarClock, Clock3 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { CalendarClock, Clock3 } from "lucide-react-native";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import Agenda from "@/components/Agenda";
 import Card from "@/components/Card";
 import Clock from "@/components/Clock";
 import DailyForecast from "@/components/DailyForecast";
 import HourlyForecast from "@/components/HourlyForecast";
-import Slideshow from "@/components/Slideshow";
-import StatusBar from "@/components/StatusBar";
+import TopBar from "@/components/TopBar";
 import WeatherCurrent from "@/components/WeatherCurrent";
 import { useAgenda } from "@/hooks/useAgenda";
 import { useClock } from "@/hooks/useClock";
-import { useIdleTimer } from "@/hooks/useIdleTimer";
+import { useSettings } from "@/hooks/useSettings";
 import { useWeather } from "@/hooks/useWeather";
 import { formatDuration, getNextEvent } from "@/lib/agenda";
+import { colors, fonts } from "@/lib/theme";
 import { fromNow } from "@/lib/weather";
 
 interface DashboardProps {
-  photos: string[];
+  onStartSlideshow: () => void;
 }
 
-// Echo Show 8 screen resolution
-const WIDTH = 1280;
-const HEIGHT = 800;
-const IDLE_TIMEOUT_MS = 5 * 60 * 1000;
+// Logical size (dp) of the Echo Show 8 screen: 1280x800 px at density 1.33
+const WIDTH = 960;
+const HEIGHT = 600;
 
 // ISO 8601 week number: weeks start on Monday and week 1 is the one
 // containing the year's first Thursday
@@ -35,81 +34,113 @@ function isoWeek(date: Date) {
   return Math.ceil(((d.getTime() - yearStart) / 86400000 + 1) / 7);
 }
 
-export default function Dashboard({ photos }: DashboardProps) {
-  const cachedWeather = useWeather();
-  const agenda = useAgenda();
-  const now = useClock("minute") ?? new Date();
-  const { idle, goIdle } = useIdleTimer(IDLE_TIMEOUT_MS);
+export default function Dashboard({ onStartSlideshow }: DashboardProps) {
+  const { settings } = useSettings();
+  const cachedWeather = useWeather(settings.lat, settings.lon);
+  const agenda = useAgenda(settings.agendaUrl);
+  const now = useClock("minute");
   const weather = cachedWeather && fromNow(cachedWeather, now);
   const next = agenda && getNextEvent(agenda.events, now);
 
-  // The dashboard is laid out at a fixed 1280x800 and scaled to fit its
+  // The dashboard is laid out at a fixed 960x600 and scaled to fit its
   // container, so it looks the same on the device and inside the web mockup
-  const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0);
 
-  useEffect(() => {
-    const observer = new ResizeObserver(([entry]) => {
-      const { width, height } = entry.contentRect;
-      setScale(Math.min(width / WIDTH, height / HEIGHT));
-    });
-    observer.observe(containerRef.current!);
-    return () => observer.disconnect();
-  }, []);
-
   return (
-    <div
-      ref={containerRef}
-      className="flex h-full w-full items-center justify-center overflow-hidden bg-[#080c14]"
+    <View
+      style={styles.container}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        setScale(Math.min(width / WIDTH, height / HEIGHT));
+      }}
     >
-      <div
-        className="relative flex shrink-0 flex-col overflow-hidden bg-gradient-to-br from-[#0c1322] via-[#090d16] to-[#06080e] text-slate-100"
-        style={{ width: WIDTH, height: HEIGHT, transform: `scale(${scale})` }}
+      <LinearGradient
+        colors={["#0c1322", "#090d16", "#06080e"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.canvas, { transform: [{ scale }] }]}
       >
-        {/* Ambient glows */}
-        <div className="pointer-events-none absolute -top-32 -left-32 h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute right-10 -bottom-32 h-[420px] w-[420px] rounded-full bg-indigo-500/10 blur-3xl" />
+        <TopBar
+          city={settings.city}
+          weatherUpdatedAt={cachedWeather?.updatedAt}
+          onStartSlideshow={onStartSlideshow}
+        />
 
-        <StatusBar weatherUpdatedAt={cachedWeather?.updatedAt} onStartSlideshow={goIdle} />
-
-        <main className="relative grid min-h-0 flex-1 grid-cols-2 gap-4 p-4">
-          <div className="flex min-h-0 flex-col gap-4">
-            <div className="grid grid-cols-2 gap-4">
+        <View style={styles.main}>
+          <View style={styles.column}>
+            <View style={styles.topRow}>
               <Card
                 title="Horário local"
                 icon={Clock3}
-                aside={
-                  <span className="tile rounded px-2 py-0.5 font-display text-xs text-slate-400">
-                    SEM {isoWeek(now)}
-                  </span>
-                }
+                style={styles.clockCard}
+                aside={<Text style={styles.week}>SEM {isoWeek(now)}</Text>}
               >
                 <Clock />
                 {next && (
-                  <p className="mt-auto flex items-center gap-1.5 truncate border-t border-white/5 pt-3 text-sm font-medium text-cyan-400">
-                    <CalendarClock className="h-4 w-4 shrink-0" aria-hidden />
-                    Em {formatDuration(next.minutes)} · {next.event.title}
-                  </p>
+                  <View style={styles.nextEvent}>
+                    <CalendarClock size={13} color={colors.cyan} />
+                    <Text style={styles.nextEventText} numberOfLines={1}>
+                      Em {formatDuration(next.minutes)} · {next.event.title}
+                    </Text>
+                  </View>
                 )}
               </Card>
               {weather && <WeatherCurrent weather={weather} />}
-            </div>
+            </View>
 
             {weather ? (
               <>
                 <HourlyForecast hourly={weather.hourly} />
-                <DailyForecast daily={weather.daily} className="min-h-0 flex-1" />
+                <DailyForecast daily={weather.daily} />
               </>
             ) : (
-              <p className="m-auto text-xl text-slate-500">Carregando clima…</p>
+              <Text style={styles.loading}>Carregando clima…</Text>
             )}
-          </div>
+          </View>
 
-          <Agenda agenda={agenda} now={now} className="min-h-0" />
-        </main>
-
-        {idle && <Slideshow photos={photos} />}
-      </div>
-    </div>
+          <View style={styles.column}>
+            <Agenda agenda={agenda} configured={Boolean(settings.agendaUrl)} now={now} />
+          </View>
+        </View>
+      </LinearGradient>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    backgroundColor: colors.canvas,
+  },
+  canvas: { width: WIDTH, height: HEIGHT, flexShrink: 0 },
+  main: { flex: 1, flexDirection: "row", gap: 12, padding: 12 },
+  column: { flex: 1, gap: 12 },
+  topRow: { flexDirection: "row", gap: 12, height: 172 },
+  clockCard: { flex: 1 },
+  week: {
+    color: colors.textMuted,
+    fontFamily: fonts.display,
+    fontSize: 9,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: "hidden",
+    backgroundColor: colors.tile,
+    borderWidth: 1,
+    borderColor: colors.tileBorder,
+  },
+  nextEvent: {
+    marginTop: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.divider,
+  },
+  nextEventText: { flex: 1, color: colors.cyan, fontFamily: fonts.bodyMedium, fontSize: 11 },
+  loading: { margin: "auto", color: colors.textFaint, fontFamily: fonts.body, fontSize: 14 },
+});

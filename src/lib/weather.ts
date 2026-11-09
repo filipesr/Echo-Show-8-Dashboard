@@ -2,10 +2,6 @@ import type { WeatherData } from "@/types/weather";
 
 const API_URL = "https://api.open-meteo.com/v1/forecast";
 
-export const LAT = process.env.NEXT_PUBLIC_LAT || "-25.41";
-export const LON = process.env.NEXT_PUBLIC_LON || "-54.63";
-export const CITY = process.env.NEXT_PUBLIC_CITY || "Hernandarias";
-
 // Raw response shape (only the fields we request)
 interface OpenMeteoResponse {
   current: {
@@ -33,10 +29,10 @@ interface OpenMeteoResponse {
   };
 }
 
-export async function fetchWeather(): Promise<WeatherData> {
+export async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
   const params = new URLSearchParams({
-    latitude: LAT,
-    longitude: LON,
+    latitude: String(lat),
+    longitude: String(lon),
     current:
       "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day",
     hourly: "temperature_2m,precipitation_probability,weather_code,is_day",
