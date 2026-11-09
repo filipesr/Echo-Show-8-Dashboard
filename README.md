@@ -27,6 +27,10 @@ Built as an Android launcher, it starts automatically when the device boots, loc
 | **Web (Vercel)** | Static site with the Echo Show mockup | `public/photos/` or `EXPO_PUBLIC_PHOTOS_URL` | `npm run build:web` |
 | **Web on a device** | Fullscreen, no mockup: open with `?kiosk` or install as PWA | Same as web | Any kiosk browser (e.g. Fully Kiosk) |
 
+### Download
+
+**[⬇ Download the latest APK](https://github.com/filipesr/Echo-Show-8-Dashboard/releases/latest/download/echo-dashboard.apk)** — or browse all versions on the [Releases page](https://github.com/filipesr/Echo-Show-8-Dashboard/releases). The web preview links to it too.
+
 ### Tech stack
 
 - [Expo](https://expo.dev/) SDK 58 (React Native 0.88, New Architecture) with Expo Router
@@ -39,8 +43,8 @@ Built as an Android launcher, it starts automatically when the device boots, loc
 ### Quick start
 
 ```bash
-git clone https://github.com/filipesr/Echo-Show-8-Dashboard-PWA.git
-cd Echo-Show-8-Dashboard-PWA
+git clone https://github.com/filipesr/Echo-Show-8-Dashboard.git
+cd Echo-Show-8-Dashboard
 npm install
 cp .env.example .env   # optional: default city, agenda URL
 
@@ -76,7 +80,7 @@ Build-time **defaults**. On the device everything can be changed in the settings
 
 1. Jailbreak your Echo Show 8 2nd gen with [saiyaku-athena](https://xdaforums.com/t/unlock-root-twrp-unbrick-amazon-echo-show-8-2nd-gen-2021-athena.4804958/)
 2. Flash [LineageOS 18.1 for athena](https://github.com/amazon-oss/releases/releases/tag/lineage-18.1-athena-v0.1)
-3. Install the APK: `adb install -r app-release.apk`
+3. [Download the APK](https://github.com/filipesr/Echo-Show-8-Dashboard/releases/latest/download/echo-dashboard.apk) and install it: `adb install -r echo-dashboard.apk`
 4. Press the home button (or `adb shell input keyevent KEYCODE_HOME`) — Android asks which launcher to use
 5. Select **Echo Dashboard** and choose "Always"
 6. Copy photos to a folder on the device (see below), then tap the **top-left corner 5 times** to open the settings and pick that folder, your city (search it and tap "Principal"; "Adicionar" adds it as an extra badge) and the agenda URL
@@ -104,7 +108,25 @@ Point the agenda URL (settings screen or `EXPO_PUBLIC_AGENDA_URL`) to a JSON fil
 - `events`: `date` (`YYYY-MM-DD`), `time` (`HH:MM`), `title`, optional `subtitle`, `tag` (badge text) and `color` (`cyan`, `amber`, `emerald` or `indigo`)
 - `reminders`: `text` and optional `done`
 
-A [GitHub Gist](https://gist.github.com/) raw URL works well (it also allows CORS, required on web). The dashboard polls it every 5 minutes.
+A [GitHub Gist](https://gist.github.com/) raw URL works well (it also allows CORS, required on web). The dashboard polls it every 5 minutes. Use the raw URL **without** the revision hash, so it always serves the latest version.
+
+Example gist ([view](https://gist.github.com/filipesr/7cabff6810db28d495a37c36f5b9c3d0)), ready to paste in the settings:
+
+```
+https://gist.githubusercontent.com/filipesr/7cabff6810db28d495a37c36f5b9c3d0/raw/agenda.json
+```
+
+### Publishing a release
+
+```bash
+# bump "version" in app.json, then:
+npx expo prebuild --platform android
+cd android && ORG_GRADLE_PROJECT_reactNativeArchitectures=arm64-v8a ./gradlew assembleRelease && cd ..
+cp android/app/build/outputs/apk/release/app-release.apk echo-dashboard.apk
+gh release create v<version> echo-dashboard.apk --title "v<version>" --notes "..."
+```
+
+Keep the asset name `echo-dashboard.apk`: the "latest" download link depends on it. The APK is signed with the default debug keystore of the Expo template (fine for sideloading; updates install over each other because the key never changes).
 
 ### Project structure
 

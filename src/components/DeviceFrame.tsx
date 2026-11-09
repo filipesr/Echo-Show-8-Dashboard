@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { Download } from "lucide-react-native";
 import type { ReactNode } from "react";
-import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { colors, fonts } from "@/lib/theme";
 
 interface DeviceFrameProps {
@@ -8,6 +9,10 @@ interface DeviceFrameProps {
 }
 
 const MAX_WIDTH = 1150;
+
+const REPO_URL = "https://github.com/filipesr/Echo-Show-8-Dashboard";
+// Always the latest release: the APK asset keeps the same name in every release
+const APK_URL = `${REPO_URL}/releases/latest/download/echo-dashboard.apk`;
 
 // Web preview: draws an Echo Show 8 (chassis, camera, speaker base)
 // with the live dashboard inside its 16:10 screen
@@ -30,8 +35,23 @@ export default function DeviceFrame({ children }: DeviceFrameProps) {
         colors={["#1e293b", "#0f172a", "#020617"]}
         style={[styles.stand, { width: width * 0.6 }]}
       />
+      <Pressable onPress={() => Linking.openURL(APK_URL)} accessibilityRole="link">
+        <LinearGradient
+          colors={["#06b6d4", "#2563eb"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.download}
+        >
+          <Download size={18} color="#fff" />
+          <Text style={styles.downloadText}>Baixar APK para Android</Text>
+        </LinearGradient>
+      </Pressable>
       <Text style={styles.hint}>
-        Prévia web. No Echo Show, instale o APK como launcher — veja o README.
+        Prévia web. No Echo Show (LineageOS), instale o APK com{" "}
+        <Text style={styles.code}>adb install</Text> e escolha-o como app de início.{" "}
+        <Text style={styles.link} onPress={() => Linking.openURL(REPO_URL)}>
+          Instruções no GitHub
+        </Text>
       </Text>
     </View>
   );
@@ -69,5 +89,24 @@ const styles = StyleSheet.create({
   },
   screen: { aspectRatio: 16 / 10, overflow: "hidden", borderWidth: 1, borderColor: "rgba(0,0,0,0.6)" },
   stand: { height: 32, marginTop: -2, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, opacity: 0.9 },
-  hint: { marginTop: 24, color: colors.textFaint, fontFamily: fonts.body, fontSize: 12 },
+  download: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 28,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  downloadText: { color: "#fff", fontFamily: fonts.bodySemiBold, fontSize: 15 },
+  hint: {
+    marginTop: 14,
+    paddingHorizontal: 16,
+    textAlign: "center",
+    color: colors.textFaint,
+    fontFamily: fonts.body,
+    fontSize: 12,
+  },
+  code: { fontFamily: fonts.display, color: colors.textMuted },
+  link: { color: colors.cyan, textDecorationLine: "underline" },
 });
