@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+}
+
+@theme {
+  --animate-fade-in: fade-in 3s ease-in-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+body {
+  background: #0a0a0a;
+  color: #ededed;
+}
+
+/* Woven fabric look for the Echo Show speaker body (web mode only) */
+.device-fabric {
+  background-color: #2b2b2d;
+  background-image: radial-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px);
+  background-size: 4px 4px;
+}
