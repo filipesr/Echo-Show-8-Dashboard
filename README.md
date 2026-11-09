@@ -9,11 +9,12 @@ Built as an Android launcher, it starts automatically when the device boots, loc
 - **Android launcher** — replaces the home screen, boots straight into the dashboard
 - **24h clock** with live seconds, weekday, full date in Portuguese and ISO week number
 - **Current weather** via [Open-Meteo](https://open-meteo.com/) (free, no API key): temperature, feels-like, today's min/max, wind, rain chance and humidity
+- **Extra cities** — up to 3 cities as badges next to the main one in the top bar; tap one to see its forecast (goes back to the main city when the slideshow or settings open)
 - **Hourly forecast** — next 8 hours with rain chance
 - **Daily forecast** — today + next 4 days with min/max temperature bars
 - **Weekly agenda** — events and reminders from a JSON file you host anywhere (e.g. a GitHub Gist), with a "next event in X min" countdown
 - **Photo slideshow** screensaver after 5 minutes idle (or on demand): 3s crossfade, 10s per photo, small clock overlay; any touch goes back
-- **Settings screen** (5 taps on the top-left corner): city search, agenda URL, photo folder, brightness, volume, Wi-Fi status and Android shortcuts
+- **Settings screen** (5 taps on the top-left corner): main and extra cities, agenda URL, photo folder, brightness, volume, Wi-Fi status and Android shortcuts
 - **Offline support** — the last weather and agenda responses are cached on the device
 - **Universal** — the same codebase builds the Android APK (launcher) and a static web app (Vercel)
 - **Web preview** — on desktop browsers, the dashboard runs inside an Echo Show 8 mockup
@@ -78,7 +79,7 @@ Build-time **defaults**. On the device everything can be changed in the settings
 3. Install the APK: `adb install -r app-release.apk`
 4. Press the home button (or `adb shell input keyevent KEYCODE_HOME`) — Android asks which launcher to use
 5. Select **Echo Dashboard** and choose "Always"
-6. Copy photos to a folder on the device (see below), then tap the **top-left corner 5 times** to open the settings and pick that folder, your city and the agenda URL
+6. Copy photos to a folder on the device (see below), then tap the **top-left corner 5 times** to open the settings and pick that folder, your city (search it and tap "Principal"; "Adicionar" adds it as an extra badge) and the agenda URL
 
 To get back to the stock launcher: settings → "Trocar launcher padrão".
 
@@ -113,7 +114,7 @@ src/
     _layout.tsx               # fonts, settings provider, keep awake, immersive mode
     index.tsx                 # dashboard (mockup frame on web), idle timer, secret corner
     slideshow.tsx             # photo screensaver
-    settings.tsx              # city, agenda, photo folder, brightness/volume, Android shortcuts
+    settings.tsx              # main/extra cities, agenda, photo folder, brightness/volume, Android shortcuts
     +html.tsx                 # web only: HTML shell of the static export
   components/
     Dashboard.tsx             # 960x600 dp canvas scaled to fit (1280x800 px on the device)
@@ -140,6 +141,8 @@ docs/
 ### Design
 
 The visual design follows the mockup in [`docs/screens/`](docs/screens/) (generated with Stitch): dark navy canvas, glass-like cards, cyan/amber accents, Space Grotesk for numbers and Plus Jakarta Sans for text.
+
+The app icon also comes from Stitch ([`docs/ico.zip`](docs/ico.zip)). The sizes in `assets/images/` (app icon, Android adaptive foreground, splash, favicon) and `public/icon-*.png` (web) are generated from it; the adaptive icon background is `#0e131e`.
 
 ### Why not Home Assistant?
 

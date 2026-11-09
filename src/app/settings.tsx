@@ -6,6 +6,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { useSystemStatus } from "@/hooks/useSystemStatus";
 import { searchPlaces, type Place } from "@/lib/geocoding";
 import { listAlbums, requestPhotoPermission, supportsAlbums, type AlbumOption } from "@/lib/photos";
+import { MAX_EXTRA_CITIES } from "@/lib/settings";
 import { colors, fonts } from "@/lib/theme";
 
 const STEP = 0.1;
@@ -40,10 +41,38 @@ export default function SettingsScreen() {
     setPlaces(await searchPlaces(query.trim()).catch(() => []));
   }
 
-  function selectPlace(place: Place) {
-    updateSettings({ city: place.name, lat: place.lat, lon: place.lon });
+  const isSamePlace = (a: { lat: number; lon: number }, b: { lat: number; lon: number }) =>
+    a.lat === b.lat && a.lon === b.lon;
+  const canAddExtra = settings.extraCities.length < MAX_EXTRA_CITIES;
+
+  function clearSearch() {
     setPlaces(null);
     setQuery("");
+  }
+
+  function setMainCity(place: Place) {
+    updateSettings({
+      city: place.name,
+      lat: place.lat,
+      lon: place.lon,
+      // A city can't be both main and extra
+      extraCities: settings.extraCities.filter((c) => !isSamePlace(c, place)),
+    });
+    clearSearch();
+  }
+
+  function addExtraCity(place: Place) {
+    const known = isSamePlace(settings, place) || settings.extraCities.some((c) => isSamePlace(c, place));
+    if (!known && canAddExtra) {
+      updateSettings({
+        extraCities: [...settings.extraCities, { name: place.name, lat: place.lat, lon: place.lon }],
+      });
+    }
+    clearSearch();
+  }
+
+  function removeExtraCity(index: number) {
+    updateSettings({ extraCities: settings.extraCities.filter((_, i) => i !== index) });
   }
 
   return (
@@ -67,10 +96,26 @@ export default function SettingsScreen() {
           </View>
           {places?.length === 0 && <Text style={styles.muted}>Nenhuma cidade encontrada.</Text>}
           {places?.map((place) => (
-            <Pressable key={`${place.lat},${place.lon}`} style={styles.row} onPress={() => selectPlace(place)}>
-              <Text style={styles.rowTitle}>{place.name}</Text>
-              <Text style={styles.muted}>{place.region}</Text>
-            </Pressable>
+            <View key={`${place.lat},${place.lon}`} style={styles.row}>
+              <View style={styles.rowText}>
+                <Text style={styles.rowTitle}>{place.name}</Text>
+                <Text style={styles.muted}>{place.region}</Text>
+              </View>
+              <Button label="Principal" onPress={() => setMainCity(place)} />
+              {canAddExtra && <Button label="Adicionar" onPress={() => addExtraCity(place)} />}
+            </View>
+          ))}
+        </Section>
+
+        <Section title={`Outras cidades (até ${MAX_EXTRA_CITIES})`}>
+          {settings.extraCities.length === 0 && (
+            <Text style={styles.muted}>Busque uma cidade e toque em “Adicionar” para vê-la como badge no cabeçalho.</Text>
+          )}
+          {settings.extraCities.map((city, i) => (
+            <View key={`${city.lat},${city.lon}`} style={styles.row}>
+              <Text style={[styles.rowTitle, styles.rowText]}>{city.name}</Text>
+              <Button label="Remover" onPress={() => removeExtraCity(i)} />
+            </View>
           ))}
         </Section>
 
@@ -201,12 +246,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.tileBorder,
     backgroundColor: colors.tile,
   },
+  rowText: { flex: 1 },
   rowSelected: { borderColor: colors.cyan, backgroundColor: colors.cyanBg },
   rowTitle: { color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 14 },
   stepper: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },

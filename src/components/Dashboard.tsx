@@ -1,6 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { CalendarClock, Clock3 } from "lucide-react-native";
-import { useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import Agenda from "@/components/Agenda";
 import Card from "@/components/Card";
@@ -36,7 +37,16 @@ function isoWeek(date: Date) {
 
 export default function Dashboard({ onStartSlideshow }: DashboardProps) {
   const { settings } = useSettings();
-  const cachedWeather = useWeather(settings.lat, settings.lon);
+
+  // Main city first, then the extra ones (badges in the top bar). The selected
+  // one is shown; it goes back to the main city whenever the dashboard loses
+  // focus (slideshow, settings), so the wall display defaults to it.
+  const cities = [{ name: settings.city, lat: settings.lat, lon: settings.lon }, ...settings.extraCities];
+  const [selected, setSelected] = useState(0);
+  const city = cities[selected] ?? cities[0]; // the selected city may have been removed
+  useFocusEffect(useCallback(() => () => setSelected(0), []));
+
+  const cachedWeather = useWeather(city.lat, city.lon);
   const agenda = useAgenda(settings.agendaUrl);
   const now = useClock("minute");
   const weather = cachedWeather && fromNow(cachedWeather, now);
@@ -61,7 +71,9 @@ export default function Dashboard({ onStartSlideshow }: DashboardProps) {
         style={[styles.canvas, { transform: [{ scale }] }]}
       >
         <TopBar
-          city={settings.city}
+          cities={cities}
+          selected={cities.indexOf(city)}
+          onSelectCity={setSelected}
           weatherUpdatedAt={cachedWeather?.updatedAt}
           onStartSlideshow={onStartSlideshow}
         />

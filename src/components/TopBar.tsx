@@ -2,10 +2,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Image as ImageIcon, RefreshCw } from "lucide-react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useClock } from "@/hooks/useClock";
+import type { City } from "@/lib/settings";
 import { colors, fonts } from "@/lib/theme";
 
 interface TopBarProps {
-  city: string;
+  cities: City[]; // main city first, then the extra ones
+  selected: number; // index of the city whose weather is shown
+  onSelectCity: (index: number) => void;
   weatherUpdatedAt?: number;
   onStartSlideshow: () => void;
 }
@@ -15,16 +18,35 @@ const STALE_MS = 30 * 60 * 1000;
 
 const timeFormat = new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-export default function TopBar({ city, weatherUpdatedAt, onStartSlideshow }: TopBarProps) {
+export default function TopBar({
+  cities,
+  selected,
+  onSelectCity,
+  weatherUpdatedAt,
+  onStartSlideshow,
+}: TopBarProps) {
   const now = useClock("minute");
   const stale = !weatherUpdatedAt || now.getTime() - weatherUpdatedAt > STALE_MS;
   const statusColor = stale ? colors.amberSoft : colors.cyanSoft;
 
   return (
     <View style={styles.bar}>
-      <View style={styles.pill}>
-        <View style={styles.dot} />
-        <Text style={styles.city}>{city}</Text>
+      <View style={styles.cities}>
+        {cities.map((city, i) => {
+          const active = i === selected;
+          return (
+            <Pressable
+              key={`${city.lat},${city.lon}`}
+              onPress={() => onSelectCity(i)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              style={[styles.pill, active && styles.pillActive]}
+            >
+              {active && <View style={styles.dot} />}
+              <Text style={[styles.city, active && styles.cityActive]}>{city.name}</Text>
+            </Pressable>
+          );
+        })}
       </View>
 
       <View style={styles.right}>
@@ -62,6 +84,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.divider,
   },
+  cities: { flexDirection: "row", alignItems: "center", gap: 6 },
   pill: {
     flexDirection: "row",
     alignItems: "center",
@@ -73,8 +96,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.tileBorder,
   },
+  pillActive: { backgroundColor: colors.cyanBg, borderColor: colors.cyanBorder },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.cyan },
-  city: { color: colors.text, fontFamily: fonts.bodySemiBold, fontSize: 12 },
+  city: { color: colors.textMuted, fontFamily: fonts.bodyMedium, fontSize: 12 },
+  cityActive: { color: colors.text, fontFamily: fonts.bodySemiBold },
   right: { flexDirection: "row", alignItems: "center", gap: 8 },
   status: {
     flexDirection: "row",
