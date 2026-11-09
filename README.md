@@ -4,6 +4,21 @@ A universal app that replaces the home screen on jailbroken Amazon Echo Show 8 d
 
 Built as an Android launcher, it starts automatically when the device boots, locks to landscape fullscreen, reads your photos from a folder on the device, and shows a clean dashboard with live weather and your agenda. No server, no Home Assistant, no subscriptions.
 
+> 💬 Shared on XDA: **[Echo Show 8 2nd gen — standalone smart dashboard, no Home Assistant required](https://xdaforums.com/t/sharing-echo-show-8-2nd-gen-standalone-smart-dashboard-no-home-assistant-required.4808106/)** — questions, feedback and photos of your setup are welcome there.
+
+### Motivation
+
+Amazon's Echo Show devices are capable hardware — a good 8" screen, decent speakers, always plugged in — held back by ads, telemetry and a locked-down OS. That changed when the XDA community published a way to free them:
+
+- **[Unlock / root / TWRP / unbrick for the Echo Show 8 2nd gen (2021, "athena")](https://xdaforums.com/t/unlock-root-twrp-unbrick-amazon-echo-show-8-2nd-gen-2021-athena.4804958/)** — the *saiyaku-athena* exploit that unlocks the bootloader and makes the device flashable
+- **[\[ROM\]\[UNOFFICIAL\]\[11\] LineageOS 18.1 for the Echo Show 8 (2021)](https://xdaforums.com/t/rom-unofficial-11-athena-lineageos-18-1-for-the-amazon-echo-show-8-2021.4805400/)** — a full Android 11 build for athena, turning the Echo Show into a regular Android tablet
+
+With plain Android running, the device still lacked something made for it: a glanceable, always-on home screen for the kitchen or the nightstand. This project is that missing piece — a launcher built for the Echo Show 8's 1280×800 screen, with no cloud account or server behind it.
+
+Once it was running on a real device, the result was shared back with the community in the XDA thread **[\[SHARING\] Echo Show 8 2nd gen standalone smart dashboard — no Home Assistant required](https://xdaforums.com/t/sharing-echo-show-8-2nd-gen-standalone-smart-dashboard-no-home-assistant-required.4808106/)**, documenting the whole process from the unlocked device to the dashboard.
+
+Follow and support the community in the [XDA Amazon Echo forum](https://xdaforums.com/f/amazon-echo.6148/).
+
 ### Features
 
 - **Android launcher** — replaces the home screen, boots straight into the dashboard
@@ -78,8 +93,8 @@ Build-time **defaults**. On the device everything can be changed in the settings
 
 ### Device setup
 
-1. Jailbreak your Echo Show 8 2nd gen with [saiyaku-athena](https://xdaforums.com/t/unlock-root-twrp-unbrick-amazon-echo-show-8-2nd-gen-2021-athena.4804958/)
-2. Flash [LineageOS 18.1 for athena](https://github.com/amazon-oss/releases/releases/tag/lineage-18.1-athena-v0.1)
+1. Unlock your Echo Show 8 2nd gen with *saiyaku-athena*, following the [XDA unlock/root/TWRP thread](https://xdaforums.com/t/unlock-root-twrp-unbrick-amazon-echo-show-8-2nd-gen-2021-athena.4804958/)
+2. Flash LineageOS 18.1 for athena, following the [XDA ROM thread](https://xdaforums.com/t/rom-unofficial-11-athena-lineageos-18-1-for-the-amazon-echo-show-8-2021.4805400/) ([builds](https://github.com/amazon-oss/releases/releases/tag/lineage-18.1-athena-v0.1))
 3. [Download the APK](https://github.com/filipesr/Echo-Show-8-Dashboard/releases/latest/download/echo-dashboard.apk) and install it: `adb install -r echo-dashboard.apk`
 4. Press the home button (or `adb shell input keyevent KEYCODE_HOME`) — Android asks which launcher to use
 5. Select **Echo Dashboard** and choose "Always"
@@ -172,7 +187,17 @@ TECHO5 and similar projects turn the Echo Show into a great Home Assistant satel
 
 ### Supported devices
 
-Primarily designed for the Echo Show 8 2nd gen (1280×800), but works on any Android device as a launcher and on any browser as a web page.
+Primarily designed for the Echo Show 8 2nd gen (1280×800, LineageOS 18.1 / Android 11), but works on any Android 7.0+ device as a launcher and on any browser as a web page.
+
+### Credits
+
+This project only exists because of the work published by the XDA community:
+
+- [Unlock / root / TWRP / unbrick — Amazon Echo Show 8 2nd gen (2021, athena)](https://xdaforums.com/t/unlock-root-twrp-unbrick-amazon-echo-show-8-2nd-gen-2021-athena.4804958/) (*saiyaku-athena*)
+- [\[ROM\]\[UNOFFICIAL\]\[11\] LineageOS 18.1 for the Amazon Echo Show 8 (2021)](https://xdaforums.com/t/rom-unofficial-11-athena-lineageos-18-1-for-the-amazon-echo-show-8-2021.4805400/)
+- [XDA Forums — Amazon Echo](https://xdaforums.com/f/amazon-echo.6148/)
+
+Thanks to the authors and contributors of these threads. Also: weather data by [Open-Meteo](https://open-meteo.com/) (CC BY 4.0), icons by [Lucide](https://lucide.dev/), fonts [Space Grotesk](https://fonts.google.com/specimen/Space+Grotesk) and [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans) (SIL Open Font License), visual design and icon generated with [Stitch](https://stitch.withgoogle.com/).
 
 ### License
 
