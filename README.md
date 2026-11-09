@@ -7,6 +7,8 @@ Built as an Android launcher, it starts automatically when the device boots, loc
 ![Echo Dashboard running on an Echo Show 8 (2nd gen) with LineageOS](docs/photo-echo-show.jpeg)
 
 > 💬 Shared on XDA: **[Echo Show 8 2nd gen — standalone smart dashboard, no Home Assistant required](https://xdaforums.com/t/sharing-echo-show-8-2nd-gen-standalone-smart-dashboard-no-home-assistant-required.4808106/)** — questions, feedback and photos of your setup are welcome there.
+>
+> 📝 The full story: **[From e-waste to smart dashboard: replacing Amazon's OS on the Echo Show 8](https://www.linkedin.com/pulse/from-e-waste-smart-dashboard-replacing-amazons-os-8-salvarez-rezende-sh7vf/)** (LinkedIn article documenting the whole process).
 
 ### Motivation
 
