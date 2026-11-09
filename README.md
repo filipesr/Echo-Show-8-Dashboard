@@ -154,4 +154,4 @@ Primarily designed for the Echo Show 8 2nd gen (1280×800), but works on any And
 
 ### License
 
-MIT
+[MIT](LICENSE) © 2026 Filipe Salvarez Rezende — free to use, copy, modify and distribute (including commercially), as long as the copyright notice with the original author is kept.
