@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const ACTIVITY_EVENTS = ["pointerdown", "pointermove", "keydown", "wheel"];
 
-// Returns true after `timeoutMs` without user interaction.
+// Returns `idle` = true after `timeoutMs` without user interaction, plus
+// `goIdle` to enter the idle state right away (e.g. a "start slideshow" button).
 // Every interaction clears the pending timer and starts a new one, so the
 // timeout only fires after a full uninterrupted period of inactivity.
 // Any interaction while idle immediately sets it back to false.
-export function useIdleTimer(timeoutMs: number): boolean {
+export function useIdleTimer(timeoutMs: number) {
   const [idle, setIdle] = useState(false);
 
   useEffect(() => {
@@ -32,5 +33,7 @@ export function useIdleTimer(timeoutMs: number): boolean {
     };
   }, [timeoutMs]);
 
-  return idle;
+  const goIdle = useCallback(() => setIdle(true), []);
+
+  return { idle, goIdle };
 }

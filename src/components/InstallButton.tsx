@@ -41,12 +41,12 @@ export default function InstallButton() {
         type="button"
         onClick={install}
         disabled={!installEvent}
-        className="rounded-full bg-neutral-100 px-8 py-3 text-lg font-medium text-neutral-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-full border border-slate-700 bg-slate-800 px-7 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-slate-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
       >
         Instalar no dispositivo
       </button>
       {!installEvent && (
-        <p className="max-w-sm text-sm text-neutral-500">
+        <p className="max-w-sm text-sm text-slate-500">
           Abra no Chrome ou Edge para instalar. No iPhone/iPad, use Compartilhar
           → Adicionar à Tela de Início.
         </p>

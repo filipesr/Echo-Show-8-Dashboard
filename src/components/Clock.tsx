@@ -25,22 +25,22 @@ export default function Clock({ size = "large" }: ClockProps) {
   const large = size === "large";
 
   return (
-    <div>
-      <div className="flex items-baseline font-light leading-none tracking-tight tabular-nums">
-        <span className={large ? "text-[176px]" : "text-6xl"}>
+    <div className={large ? "" : "text-right"}>
+      <div
+        className={`flex items-baseline font-display font-bold tracking-tight tabular-nums ${
+          large ? "" : "justify-end"
+        }`}
+      >
+        <span className={large ? "text-[76px] leading-none" : "text-5xl"}>
           {now ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : "--:--"}
         </span>
         {large && (
-          <span className="ml-4 text-6xl text-neutral-500">
-            {now ? pad(now.getSeconds()) : "--"}
+          <span className="ml-1.5 text-3xl text-cyan-400">
+            :{now ? pad(now.getSeconds()) : "--"}
           </span>
         )}
       </div>
-      <p
-        className={
-          large ? "mt-6 text-4xl text-neutral-300" : "mt-2 text-xl"
-        }
-      >
+      <p className={large ? "mt-3 text-[15px] font-medium text-slate-300" : "mt-1 text-lg"}>
         {now ? formatDate(now) : " "}
       </p>
     </div>

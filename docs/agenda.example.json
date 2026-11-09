@@ -1,0 +1,39 @@
+{
+  "events": [
+    {
+      "date": "2026-11-09",
+      "time": "10:00",
+      "title": "Reunião de alinhamento",
+      "subtitle": "Trabalho • Google Meet",
+      "color": "cyan"
+    },
+    {
+      "date": "2026-11-09",
+      "time": "13:30",
+      "title": "Buscar encomendas",
+      "subtitle": "Pessoal • Portaria do condomínio",
+      "tag": "Pendente",
+      "color": "amber"
+    },
+    {
+      "date": "2026-11-09",
+      "time": "16:00",
+      "title": "Academia",
+      "subtitle": "Saúde • Treino funcional + cardio",
+      "tag": "Rotina",
+      "color": "emerald"
+    },
+    {
+      "date": "2026-11-11",
+      "time": "19:30",
+      "title": "Jantar em família",
+      "subtitle": "Casa",
+      "tag": "Família",
+      "color": "indigo"
+    }
+  ],
+  "reminders": [
+    { "text": "Tomar vitaminas", "done": true },
+    { "text": "Comprar filtro de água" }
+  ]
+}

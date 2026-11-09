@@ -13,12 +13,14 @@ interface OpenMeteoResponse {
     temperature_2m: number;
     apparent_temperature: number;
     relative_humidity_2m: number;
+    wind_speed_10m: number;
     weather_code: number;
     is_day: number;
   };
   hourly: {
     time: string[];
     temperature_2m: number[];
+    precipitation_probability: number[];
     weather_code: number[];
     is_day: number[];
   };
@@ -27,6 +29,7 @@ interface OpenMeteoResponse {
     weather_code: number[];
     temperature_2m_max: number[];
     temperature_2m_min: number[];
+    precipitation_probability_max: number[];
   };
 }
 
@@ -35,9 +38,10 @@ export async function fetchWeather(): Promise<WeatherData> {
     latitude: LAT,
     longitude: LON,
     current:
-      "temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day",
-    hourly: "temperature_2m,weather_code,is_day",
-    daily: "weather_code,temperature_2m_max,temperature_2m_min",
+      "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day",
+    hourly: "temperature_2m,precipitation_probability,weather_code,is_day",
+    daily:
+      "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
     timezone: "auto", // times come back in the location's local time
     forecast_days: "7",
   });
@@ -51,12 +55,14 @@ export async function fetchWeather(): Promise<WeatherData> {
       temperature: data.current.temperature_2m,
       apparentTemperature: data.current.apparent_temperature,
       humidity: data.current.relative_humidity_2m,
+      windSpeed: data.current.wind_speed_10m,
       weatherCode: data.current.weather_code,
       isDay: data.current.is_day === 1,
     },
     hourly: data.hourly.time.map((time, i) => ({
       time,
       temperature: data.hourly.temperature_2m[i],
+      precipitationProbability: data.hourly.precipitation_probability[i] ?? 0,
       weatherCode: data.hourly.weather_code[i],
       isDay: data.hourly.is_day[i] === 1,
     })),
@@ -65,6 +71,7 @@ export async function fetchWeather(): Promise<WeatherData> {
       weatherCode: data.daily.weather_code[i],
       temperatureMax: data.daily.temperature_2m_max[i],
       temperatureMin: data.daily.temperature_2m_min[i],
+      precipitationProbability: data.daily.precipitation_probability_max[i] ?? 0,
     })),
     updatedAt: Date.now(),
   };
@@ -79,6 +86,19 @@ export function toLocalISO(date: Date): string {
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
     `T${pad(date.getHours())}:${pad(date.getMinutes())}`
   );
+}
+
+// Drops past hours and days, so hourly[0] is the current hour and daily[0]
+// is today, even when showing a cached response from hours ago.
+// Open-Meteo times are "YYYY-MM-DDTHH:00" strings, so comparing prefixes
+// as text is enough.
+export function fromNow(weather: WeatherData, now: Date): WeatherData {
+  const nowISO = toLocalISO(now);
+  return {
+    ...weather,
+    hourly: weather.hourly.filter((h) => h.time.slice(0, 13) >= nowISO.slice(0, 13)),
+    daily: weather.daily.filter((d) => d.date >= nowISO.slice(0, 10)),
+  };
 }
 
 // Groups the WMO weather codes used by Open-Meteo into the few

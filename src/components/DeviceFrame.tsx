@@ -20,20 +20,28 @@ export default function DeviceFrame({ children }: DeviceFrameProps) {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-10 px-4 py-10">
-      {/* Fabric speaker body, slightly larger than the display panel */}
-      <div className="device-fabric w-full max-w-5xl rounded-[3%/5%] p-[1.2%] shadow-2xl shadow-black">
-        {/* Black glass panel; padding % is relative to width */}
-        <div className="relative rounded-[2.4%/4%] bg-black px-[3.5%] py-[3.5%] ring-1 ring-white/10">
-          <div
-            aria-hidden
-            className="absolute top-[1.4%] right-[6%] h-[1.2%] w-[0.75%] rounded-full bg-neutral-800 ring-1 ring-neutral-700"
-          />
-          <div className="aspect-[8/5] overflow-hidden">{children}</div>
+    <main className="flex min-h-dvh flex-col items-center justify-center px-4 py-10">
+      {/* Chassis; padding % is relative to width */}
+      <div className="device-shadow relative w-full max-w-6xl rounded-[2.8%/4.5%] border-4 border-[#242b3d] bg-[#11141c] p-[1.8%]">
+        {/* Camera with privacy shutter, centered on the top bezel */}
+        <div
+          aria-hidden
+          className="absolute top-[0.6%] left-1/2 flex -translate-x-1/2 items-center gap-2"
+        >
+          <span className="h-1 w-1 rounded-full bg-slate-700" />
+          <span className="h-2 w-2 rounded-full border border-slate-600 bg-slate-950" />
+          <span className="h-1 w-1 rounded-full bg-slate-700" />
+        </div>
+        <div className="aspect-[8/5] overflow-hidden rounded-[1.6%/2.6%] border border-black/60">
+          {children}
         </div>
       </div>
+      {/* Speaker base behind the screen */}
+      <div aria-hidden className="device-stand -mt-1 h-9 w-3/5 max-w-[700px] rounded-b-2xl" />
 
-      <InstallButton />
+      <div className="mt-8">
+        <InstallButton />
+      </div>
     </main>
   );
 }

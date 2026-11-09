@@ -58,7 +58,7 @@ export default function Slideshow({ photos: localPhotos }: SlideshowProps) {
         />
       )}
       {/* eslint-enable @next/next/no-img-element */}
-      <div className="absolute bottom-10 left-12 text-white/70 drop-shadow-lg">
+      <div className="absolute right-12 bottom-10 text-white/70 drop-shadow-lg">
         <Clock size="small" />
       </div>
     </div>
